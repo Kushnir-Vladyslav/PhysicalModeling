@@ -20,17 +20,6 @@ public class Vec2D {
         this.y = other.y;
     }
 
-    Vec2D(Vec2D first, Vec2D second) {
-        if (first == null || second == null) {
-            throw new NullPointerException("One or two Vec2D elements passed to the constructor of \"class Vec2D\" are null");
-        }
-
-        this.x = second.x - first.x;
-        this.y = second.y - first.y;
-
-        normalization();
-    }
-
     public void add (Vec2D other) {
         if (other == null) {
             throw new NullPointerException("The Vec2D elements passed to the function \"add\" of \"class Vec2D\" are null");
@@ -75,12 +64,15 @@ public class Vec2D {
     }
 
     public Vec2D normalized() {
-        return new Vec2D(x / modulus(), y / modulus());
+        Vec2D vec2D = new Vec2D(this);
+        vec2D.normalization();
+        return vec2D;
     }
 
     public void normalization() {
-        this.x /= modulus();
-        this.y /= modulus();
+            this.x /= modulus();
+            this.y /= modulus();
+
     }
 
     public static double distance(Vec2D first, Vec2D second) {
@@ -95,7 +87,14 @@ public class Vec2D {
     }
 
     public static Vec2D newNorVec(Vec2D first, Vec2D second) {
-        return new Vec2D(first, second);
+        if (first == null || second == null) {
+            throw new NullPointerException("One or two Vec2D elements passed to the constructor of \"class Vec2D\" are null");
+        }
+
+        Vec2D vec2D = new Vec2D(first.x - second.x, first.y - second.y );
+        vec2D.normalization();
+
+        return vec2D;
     }
 
 }

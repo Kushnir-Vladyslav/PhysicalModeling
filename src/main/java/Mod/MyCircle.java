@@ -66,6 +66,11 @@ public class MyCircle  extends Circle implements PhysicalBody {
         return new Vec2D(this.getCenterX(), this.getCenterY());
     }
 
+    public void normalizationVelocity() {
+        velocityVector.normalization();
+        velocityScalar /= velocityVector.modulus();
+    }
+
     @Override
     public void setVelocityScalar(double velocityScalar) {
         this.velocityScalar = velocityScalar;

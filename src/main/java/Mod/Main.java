@@ -1,14 +1,18 @@
 package Mod;
 
+import com.almasb.fxgl.entity.level.tiled.Layer;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 public class Main extends Application {
@@ -18,7 +22,14 @@ public class Main extends Application {
     private final int xMax = 500;
     private final int yMax = 500;
 
-    private final int maxNumCir = 10;
+    private final int maxNumCir = 1;
+
+    private final double maxRadiusCircle = 5;
+
+    private List<HashSet<MyCircle>> grid;
+
+    private final int sizeGrid = (int)Math.floor(maxRadiusCircle * 2.1);
+
 
     public static void main(String[] args) {
         launch(args);
@@ -27,6 +38,14 @@ public class Main extends Application {
     @Override
     public void init() {
         circleList = new ArrayList<>();
+
+        grid = new ArrayList<>();
+
+        int numCell = (int)(Math.floor((double)xMax / sizeGrid) * Math.floor((double)yMax / sizeGrid));
+
+        for (int i = 0; i < numCell; i++) {
+            grid.add(new HashSet<>());
+        }
     }
 
     @Override
@@ -35,6 +54,8 @@ public class Main extends Application {
         Scene scene = new Scene(new Group(), 500, 500);
         stage.setScene(scene);
         stage.sizeToScene();
+//        stage.setX(0);
+//        stage.setY(0);
         stage.show();
         new MyTimer().start();
     }
@@ -43,7 +64,7 @@ public class Main extends Application {
         private long time = 0;
         private long oldLTime = 0;
 
-//        Color col = Color.valueOf(1);
+        private Label label = new Label("0");
 
         @Override
         public void handle(long lTime) {
@@ -62,27 +83,25 @@ public class Main extends Application {
             collisionBounders();
 
             for (MyCircle circle : circleList) {
-//                circle.getVelocity().add(new Vec2D(0, 9.8 * time / 1e9));
+//                circle.setVelocityScalar(circle.getVelocityScalar() -
+//                        Math.abs(circle.getVelocityVector().y * circle.getVelocityScalar()) +
+//                        9.8 * time / 1e9 + circle.getVelocityVector().y * circle.getVelocityScalar());
+//
+//                circle.getVelocityVector().y += (9.8 * time / 1e9) /
+//                        Math.abs(circle.getVelocityVector().y * circle.getVelocityScalar());
+//
+//                circle.normalizationVelocity();
 
                 circle.setCenterX(circle.getCenterX() + circle.getVelocityVector().x * circle.getVelocityScalar());
                 circle.setCenterY(circle.getCenterY() + circle.getVelocityVector().y * circle.getVelocityScalar());
             }
 
             collisionParticles();
-//            for (MyCircle circle: circleList) {
-//                if (circle.getCenterY() > yMax - circle.getRadius()) {
-//                    circle.getVelocity().mul(-0.75);
-//                }
-//            }
-//
-//            for (int i = circleList.size() - 1; i >= 0; i--) {
-//                if (circleList.get(i).getCenterY() > yMax + circleList.get(i).getRadius()) {
-//                    circleList.remove(i);
-//                }
-//            }
 
+            label.setText((int)( 1e9 / time) + "\t" + circleList.size());
             Group group = new Group(circleList.toArray(circleList.toArray(new Circle[0])));
-            Scene scene = new Scene(group, xMax, yMax);
+            Group group1 = new Group(group, label);
+            Scene scene = new Scene(group1, xMax, yMax);
             mainStage.setScene(scene);
         }
 
@@ -92,16 +111,17 @@ public class Main extends Application {
 
             try {
                 circleList.add(new MyCircle(Math.random() * xMax,
-                        Math.random() * yMax,
-                        25,
+                        radius,
+                        5,
                         Color.rgb((int) (Math.random() * 255),
                                 (int) (Math.random() * 255),
                                 (int) (Math.random() * 255))));
 
                 Vec2D vec = new Vec2D((Math.random() - 0.5) * maxVelocity, (Math.random() - 0.5) * maxVelocity);
 
-                circleList.get(circleList.size() - 1).setVelocityVector(vec.normalized());
                 circleList.get(circleList.size() - 1).setVelocityScalar(vec.modulus());
+                circleList.get(circleList.size() - 1).setVelocityVector(vec);
+                circleList.get(circleList.size() - 1).normalizationVelocity();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -112,18 +132,38 @@ public class Main extends Application {
                 if (circle.getCenterY() <= 0 + circle.getRadius()) {
                     circle.getVelocityVector().converseY();
                     circle.setCenterY(2 * circle.getRadius() - circle.getCenterY());
+
+                    circle.getVelocityVector().y /= 2;
+                    circle.setVelocityScalar(circle.getVelocityScalar() *
+                            (1 - Math.abs(circle.getVelocityVector().y)));
+                    circle.normalizationVelocity();
                 }
                 if (circle.getCenterY() >= yMax - circle.getRadius()) {
                     circle.getVelocityVector().converseY();
                     circle.setCenterY(2 * (yMax - circle.getRadius()) - circle.getCenterY());
+
+                    circle.getVelocityVector().y /= 2;
+                    circle.setVelocityScalar(circle.getVelocityScalar() *
+                            (1 - Math.abs(circle.getVelocityVector().y)));
+                    circle.normalizationVelocity();
                 }
                 if (circle.getCenterX() <= 0 + circle.getRadius()) {
                     circle.getVelocityVector().converseX();
                     circle.setCenterX(2 * circle.getRadius() - circle.getCenterX());
+
+                    circle.getVelocityVector().x /= 2;
+                    circle.setVelocityScalar(circle.getVelocityScalar() *
+                            (1 - Math.abs(circle.getVelocityVector().x)));
+                    circle.normalizationVelocity();
                 }
                 if (circle.getCenterX() >= xMax - circle.getRadius()) {
                     circle.getVelocityVector().converseX();
                     circle.setCenterX(2 * (xMax - circle.getRadius()) - circle.getCenterX());
+
+                    circle.getVelocityVector().x /= 2;
+                    circle.setVelocityScalar(circle.getVelocityScalar() *
+                            (1 - Math.abs(circle.getVelocityVector().x)));
+                    circle.normalizationVelocity();
                 }
             }
         }
@@ -144,14 +184,22 @@ public class Main extends Application {
                     sumRadiuse = (first.getRadius() + second.getRadius());
 
                     if (distance <= sumRadiuse) {
-                        first.setVelocityVector(Vec2D.newNorVec(first.getVelocityVector(), second.getVelocityVector()));
-                        second.setVelocityVector(Vec2D.newNorVec(second.getVelocityVector(), first.getVelocityVector()));
+                        first.setVelocityVector(Vec2D.newNorVec(first.getCenter(), second.getCenter()));
+                        second.setVelocityVector(Vec2D.newNorVec(second.getCenter(), first.getCenter()));
 
-                        second.setCenterX(second.getCenterX() + second.getVelocityVector().x * (distance - sumRadiuse));
-                        second.setCenterY(second.getCenterY() + second.getVelocityVector().y * (distance - sumRadiuse));
+                        double sumVelocity = (first.getVelocityScalar() + second.getVelocityScalar()) / 2.1;
 
-                        second.setCenterX(second.getCenterX() + second.getVelocityVector().x * (distance - sumRadiuse));
-                        second.setCenterY(second.getCenterY() + second.getVelocityVector().y * (distance - sumRadiuse));
+                        first.setVelocityScalar(sumVelocity);
+                        second.setVelocityScalar(sumVelocity);
+
+                        first.normalizationVelocity();
+                        second.normalizationVelocity();
+
+                        first.setCenterX(first.getCenterX() + first.getVelocityVector().x * (sumRadiuse - distance));
+                        first.setCenterY(first.getCenterY() + first.getVelocityVector().y * (sumRadiuse - distance));
+
+                        second.setCenterX(second.getCenterX() + second.getVelocityVector().x * (sumRadiuse - distance));
+                        second.setCenterY(second.getCenterY() + second.getVelocityVector().y * (sumRadiuse - distance));
                     }
                 }
             }
